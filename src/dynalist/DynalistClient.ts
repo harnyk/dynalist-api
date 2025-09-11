@@ -182,17 +182,17 @@ export interface DynalistClientOptions {
 export class DynalistClient {
   private token: string;
   private baseUrl: string;
-  private userAgent?: string;
+  private userAgent: string | undefined;
   private maxRetries: number;
-  private timeoutMs?: number;
+  private timeoutMs: number | undefined;
   private fetchFn: typeof fetch;
 
   constructor(opts: DynalistClientOptions) {
     this.token = opts.token;
     this.baseUrl = (opts.baseUrl ?? "https://dynalist.io").replace(/\/$/, "");
-    this.userAgent = opts.userAgent;
+    this.userAgent = opts.userAgent ?? undefined;
     this.maxRetries = Math.max(0, opts.maxRetries ?? 3);
-    this.timeoutMs = opts.timeoutMs;
+    this.timeoutMs = opts.timeoutMs ?? undefined;
     this.fetchFn = opts.fetchFn ?? (globalThis.fetch as typeof fetch);
     if (!this.fetchFn) {
       throw new Error(
@@ -270,7 +270,7 @@ export class DynalistClient {
             ...(this.userAgent ? { "User-Agent": this.userAgent } : {}),
           },
           body: payload,
-          signal: controller?.signal,
+          signal: controller?.signal ?? null,
         });
 
         if (timeoutId) clearTimeout(timeoutId);

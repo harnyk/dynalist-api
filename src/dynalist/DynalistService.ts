@@ -14,9 +14,9 @@ export type ListInfo = Pick<FileDescriptor, 'id' | 'title' | 'type'>;
 export type ShoppingItem = {
     id: string;
     content: string;
-    note?: string;
+    note: string | undefined;
     checked: boolean;
-    _node?: DocNode;
+    _node: DocNode | undefined;
 };
 
 export type AddItemOptions = {
@@ -132,7 +132,7 @@ export class DynalistService {
             items.push({
                 id: n.id,
                 content: n.content || '',
-                note: n.note || undefined,
+                note: n.note ?? undefined,
                 checked: !!n.checked,
                 _node: n,
             });
@@ -140,46 +140,6 @@ export class DynalistService {
         return items;
     }
 
-    /**
-     * Add a single item. Protected by per-document mutex to avoid races.
-     * For maximal safety with concurrent callers, we compute index under the lock.
-     */
-    async addItem(
-        listId: string,
-        text: string,
-        opts: AddItemOptions = {}
-    ): Promise<{ id: string }> {
-        return this.mutex.run(listId, async () => {
-            const position = opts.position ?? 'bottom';
-            let index = 0;
-
-            if (position === 'bottom') {
-                const doc = await this.client.docRead(listId);
-                index = getRootChildrenCount(doc);
-            } else {
-                index = 0; // insert at top
-            }
-
-            const changes: DocEditChange[] = [
-                {
-                    action: 'insert',
-                    parent_id: 'root',
-                    index,
-                    content: text,
-                    note: opts.note,
-                    checked: opts.checked,
-                    checkbox: opts.checkbox,
-                    heading: opts.heading,
-                    color: opts.color,
-                },
-            ];
-
-            const resp = await this.client.docEdit(listId, changes);
-            const newId = resp.new_node_ids?.[0];
-            if (!newId) throw new Error('Failed to insert node');
-            return { id: newId };
-        });
-    }
 
     /**
      * Batch add multiple items in one round-trip.
@@ -204,17 +164,19 @@ export class DynalistService {
                 const index = position === 'top' ? 0 + offset : start + offset;
                 offset++;
 
-                changes.push({
+                const change: any = {
                     action: 'insert',
                     parent_id: 'root',
                     index,
                     content: text,
-                    note: opts?.note,
-                    checked: opts?.checked,
-                    checkbox: opts?.checkbox,
-                    heading: opts?.heading,
-                    color: opts?.color,
-                });
+                };
+                if (opts?.note !== undefined) change.note = opts.note;
+                if (opts?.checked !== undefined) change.checked = opts.checked;
+                if (opts?.checkbox !== undefined) change.checkbox = opts.checkbox;
+                if (opts?.heading !== undefined) change.heading = opts.heading;
+                if (opts?.color !== undefined) change.color = opts.color;
+                
+                changes.push(change);
             }
 
             const resp = await this.client.docEdit(listId, changes);
@@ -228,27 +190,7 @@ export class DynalistService {
         });
     }
 
-    /** Toggle or set checked flag for a specific item node. */
-    async checkItem(
-        listId: string,
-        nodeId: string,
-        checked = true
-    ): Promise<void> {
-        await this.mutex.run(listId, async () => {
-            await this.client.docEdit(listId, [
-                { action: 'edit', node_id: nodeId, checked },
-            ]);
-        });
-    }
 
-    /** Delete an item node from a list. */
-    async deleteItem(listId: string, nodeId: string): Promise<void> {
-        await this.mutex.run(listId, async () => {
-            await this.client.docEdit(listId, [
-                { action: 'delete', node_id: nodeId },
-            ]);
-        });
-    }
 
     /** Rename a list (document). */
     async renameList(listId: string, newName: string): Promise<void> {
@@ -285,28 +227,6 @@ export class DynalistService {
         });
     }
 
-    /** Edit item fields by node_id (content/note/checked/checkbox/heading/color). */
-    async editItem(
-        listId: string,
-        nodeId: string,
-        patch: {
-            content?: string;
-            note?: string;
-            checked?: boolean;
-            checkbox?: boolean;
-            heading?: 0 | 1 | 2 | 3;
-            color?: 0 | 1 | 2 | 3 | 4 | 5 | 6;
-        }
-    ): Promise<void> {
-        await this.mutex.run(listId, async () => {
-            const change: DocEditChange = {
-                action: 'edit',
-                node_id: nodeId,
-                ...patch,
-            };
-            await this.client.docEdit(listId, [change]);
-        });
-    }
 
     /**
      * Move item to a new position.
@@ -330,9 +250,9 @@ export class DynalistService {
             } else if (position === 'bottom') {
                 index = ids.length;
             } else if (position.before) {
-                index = Math.max(0, ids.indexOf(position.before));
-                if (index < 0)
-                    throw new Error("Target 'before' node not found");
+                const i = ids.indexOf(position.before);
+                if (i < 0) throw new Error("Target 'before' node not found");
+                index = i;
             } else if (position.after) {
                 const i = ids.indexOf(position.after);
                 if (i < 0) throw new Error("Target 'after' node not found");
@@ -414,6 +334,7 @@ export class DynalistService {
             return edits.length;
         });
     }
+
 }
 
 /* ----------------- helpers ----------------- */
