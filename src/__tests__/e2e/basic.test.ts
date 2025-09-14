@@ -14,10 +14,13 @@ describe('E2E Basic Functionality', () => {
     let trashFolderId: string;
 
     // Test helper: Move list to __trash__ folder with timestamp (workaround for missing delete API)
-    const moveListToTrash = async (listId: string, originalTitle: string): Promise<void> => {
+    const moveListToTrash = async (
+        listId: string,
+        originalTitle: string
+    ): Promise<void> => {
         const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
         const trashedTitle = `${originalTitle} [deleted-${timestamp}]`;
-        
+
         await client.fileEdit([
             // First rename with timestamp
             {
@@ -37,6 +40,11 @@ describe('E2E Basic Functionality', () => {
         ]);
     };
 
+    afterEach(async () => {
+        // anti DDOS
+        return new Promise((resolve) => setTimeout(resolve, 1000));
+    });
+
     beforeAll(() => {
         const token = process.env.TOKEN;
         if (!token) {
@@ -52,19 +60,27 @@ describe('E2E Basic Functionality', () => {
         expect(Array.isArray(lists)).toBe(true);
 
         // Find the __tests__ folder which is assumed to pre-exist
-        const testsFolder = lists.find((item) => item.type === 'folder' && item.title === '__tests__');
+        const testsFolder = lists.find(
+            (item) => item.type === 'folder' && item.title === '__tests__'
+        );
         if (testsFolder) {
             rootFolderId = testsFolder.id;
         } else {
-            throw new Error('__tests__ folder not found. Please create a folder named "__tests__" in your Dynalist account for test data.');
+            throw new Error(
+                '__tests__ folder not found. Please create a folder named "__tests__" in your Dynalist account for test data.'
+            );
         }
 
         // Find or expect the __trash__ folder for cleanup (workaround for missing delete API)
-        const trashFolder = lists.find((item) => item.type === 'folder' && item.title === '__trash__');
+        const trashFolder = lists.find(
+            (item) => item.type === 'folder' && item.title === '__trash__'
+        );
         if (trashFolder) {
             trashFolderId = trashFolder.id;
         } else {
-            throw new Error('__trash__ folder not found. Please create a folder named "__trash__" in your Dynalist account for test cleanup.');
+            throw new Error(
+                '__trash__ folder not found. Please create a folder named "__trash__" in your Dynalist account for test cleanup.'
+            );
         }
     });
 
@@ -90,7 +106,9 @@ describe('E2E Basic Functionality', () => {
     });
 
     it('should add an item to the list', async () => {
-        const result = await service.addItems(createdListId, [{ text: 'Test item' }]);
+        const result = await service.addItems(createdListId, [
+            { text: 'Test item' },
+        ]);
         expect(result.ids).toBeDefined();
         expect(result.ids.length).toBe(1);
         expect(typeof result.ids[0]).toBe('string');
@@ -115,18 +133,20 @@ describe('E2E Basic Functionality', () => {
 
         // Verify the list is no longer in the __tests__ folder
         const lists = await service.listLists();
-        const testListInTests = lists.find((list) => 
-            list.id === createdListId && 
-            list.title === 'e2e-test-list-1' // Original title
+        const testListInTests = lists.find(
+            (list) =>
+                list.id === createdListId && list.title === 'e2e-test-list-1' // Original title
         );
         expect(testListInTests).toBeUndefined();
 
         // Verify the list now exists in __trash__ folder with timestamp
-        const trashedList = lists.find((list) => 
-            list.id === createdListId && 
-            list.title.includes('[deleted-')
+        const trashedList = lists.find(
+            (list) =>
+                list.id === createdListId && list.title.includes('[deleted-')
         );
         expect(trashedList).toBeDefined();
-        expect(trashedList?.title).toMatch(/e2e-test-list-1 \[deleted-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}/);
+        expect(trashedList?.title).toMatch(
+            /e2e-test-list-1 \[deleted-\d{4}-\d{2}-\d{2}T\d{2}-\d{2}-\d{2}/
+        );
     });
 });

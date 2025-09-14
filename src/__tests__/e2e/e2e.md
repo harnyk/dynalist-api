@@ -78,3 +78,20 @@ This approach:
  - verify proper error messages for invalid "before" and "after" targets
  - clean up: move test list "e2e-item-ops-test" to trash
  - ok
+
+## Rename List Operations
+
+ - create a test list "e2e-rename-test-original" under the `__tests__` folder
+ - verify the list starts with the original name
+ - **renameList**: rename the list to "e2e-rename-test-updated"
+ - verify the list now has the new name
+ - **renameList**: rename the list again to "e2e-rename-test-final"
+ - verify the second rename worked
+ - **renameList (special characters)**: rename with spaces & special characters
+ - verify special characters are handled correctly
+ - **renameList (edge case - empty)**: test empty string rename
+ - verify API behavior with empty names
+ - **renameList (edge case - long)**: test very long name (300+ characters)
+ - verify API behavior with long names (truncation/limits)
+ - clean up: move test list to trash
+ - ok

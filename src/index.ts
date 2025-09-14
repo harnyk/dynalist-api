@@ -10,6 +10,6 @@ export type {
 } from './dynalist/DynalistClient.js';
 export type {
     ListInfo,
-    ShoppingItem,
+    ListItem as ShoppingItem,
     AddItemOptions,
 } from './dynalist/DynalistService.js';
