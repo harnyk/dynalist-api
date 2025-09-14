@@ -28,6 +28,6 @@ jobs:
         run: pnpm build
 
       - name: Run integration tests
-        run: pnpm test -- --testNamePattern="e2e|integration"
+        run: pnpm test
         env:
           TOKEN: ${{ secrets.DYNALIST_TOKEN }}
