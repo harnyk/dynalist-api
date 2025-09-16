@@ -1,6 +1,6 @@
 {
   "name": "@harnyk/dynalist-api",
-  "version": "1.0.3",
+  "version": "1.0.4",
   "description": "TypeScript library for Dynalist API",
   "type": "module",
   "main": "lib/index.js",
