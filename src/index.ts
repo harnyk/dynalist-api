@@ -1,15 +1,2 @@
-export { DynalistClient } from './dynalist/DynalistClient.js';
-export { DynalistService } from './dynalist/DynalistService.js';
-export type {
-    DynalistClientOptions,
-    FileDescriptor,
-    DocNode,
-    DynalistBaseResponse,
-    FileListResponse,
-    DocReadResponse,
-} from './dynalist/DynalistClient.js';
-export type {
-    ListInfo,
-    ListItem as ShoppingItem,
-    AddItemOptions,
-} from './dynalist/DynalistService.js';
+export * from './dynalist/DynalistClient.js';
+export * from './dynalist/DynalistService.js';
